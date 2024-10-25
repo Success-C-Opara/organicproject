@@ -1,0 +1,48 @@
+# Python files
+__pycache__/
+*.py[cod]
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+*.egg-info/
+*.egg
+
+# Django specific
+*.log
+*.pot
+*.pyc
+db.sqlite3  # If using SQLite
+media/
+staticfiles/
+
+# Environment variables
+.env
+
+# Docker files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+
+# Backup files
+*~
+*.bak
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Ignore test data
+test_data/
