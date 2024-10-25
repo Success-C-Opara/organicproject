@@ -3,11 +3,11 @@ pipeline {
 
     environment {
         // Define environment variables
-        GIT_REPO_URL = 'https://github.com/yourusername/your-repo.git'
-        BRANCH_NAME = 'main'  // Change to your target branch
-        DOCKER_IMAGE_NAME = 'your-django-app'
-        AWS_INSTANCE_IP = 'your-ec2-instance-ip'
-        SSH_KEY_PATH = credentials('your-ssh-key-id') // Jenkins credentials ID for SSH key
+        GIT_REPO_URL = 'https://github.com/Success-C-Opara/organicproject.git' // Your GitHub repo
+        BRANCH_NAME = 'main'  // Target branch
+        DOCKER_IMAGE_NAME = 'organic-django-app' // Name for your Docker image
+        AWS_INSTANCE_IP = '3.87.212.152' // Public IP of your deployment instance
+        SSH_KEY_PATH = '/home/ubuntu/success-aws-key.pem' // Path to your SSH key on the AWS instance
     }
 
     stages {
@@ -23,7 +23,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image
+                    // Build the Docker image from the Dockerfile
                     docker.build(DOCKER_IMAGE_NAME)
                 }
             }
@@ -32,16 +32,17 @@ pipeline {
         stage('Deploy to AWS') {
             steps {
                 script {
-                    // Deploy the Docker container to AWS instance
-                    sshagent (credentials: ['your-ssh-key-id']) {
-                        sh """
-                        ssh -o StrictHostKeyChecking=no ec2-user@${AWS_INSTANCE_IP} << EOF
-                        docker pull ${DOCKER_IMAGE_NAME}
-                        docker stop \$(docker ps -q --filter "ancestor=${DOCKER_IMAGE_NAME}")
-                        docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}
-                        EOF
-                        """
-                    }
+                    // Deploy the Docker container to the AWS instance
+                    sh """
+                    ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ubuntu@${AWS_INSTANCE_IP} << EOF
+                    # Pull the latest Docker image
+                    docker pull ${DOCKER_IMAGE_NAME}
+                    # Stop any running containers using the same image
+                    docker stop \$(docker ps -q --filter "ancestor=${DOCKER_IMAGE_NAME}") || true
+                    # Run the new container
+                    docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}
+                    EOF
+                    """
                 }
             }
         }
