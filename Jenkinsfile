@@ -37,8 +37,18 @@ pipeline {
                     ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ubuntu@${AWS_INSTANCE_IP} << EOF
                     # Pull the latest Docker image
                     docker pull ${DOCKER_IMAGE_NAME} || true
+                    
                     # Stop any running containers using the same image
-                    docker stop \$(docker ps -q --filter "ancestor=${DOCKER_IMAGE_NAME}") || true
+                    CONTAINER_ID=\$(docker ps -q --filter "ancestor=${DOCKER_IMAGE_NAME}")
+                    if [ -n "\$CONTAINER_ID" ]; then
+                        docker stop \$CONTAINER_ID || true
+                    fi
+                    
+                    # Remove the old container if it exists
+                    if [ -n "\$CONTAINER_ID" ]; then
+                        docker rm \$CONTAINER_ID || true
+                    fi
+                    
                     # Run the new container
                     docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}
                     EOF
