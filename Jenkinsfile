@@ -13,6 +13,7 @@ pipeline {
         stage('Checkout') {
             steps {
                 script {
+                    // Checkout the specified branch
                     git branch: BRANCH_NAME, url: GIT_REPO_URL
                 }
             }
@@ -21,7 +22,8 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    dir('.') {
+                    // Build the Docker image from the Dockerfile in the current directory
+                    dir('.') {  // Using the root directory of the project
                         docker.build(DOCKER_IMAGE_NAME)
                     }
                 }
@@ -32,17 +34,19 @@ pipeline {
             steps {
                 script {
                     sh """
-                    ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ubuntu@${AWS_INSTANCE_IP} << EOF
-                    # Stop any running containers using the same image
-                    CONTAINER_ID=\$(docker ps -q --filter "ancestor=${DOCKER_IMAGE_NAME}")
-                    if [ -n "\$CONTAINER_ID" ]; then
-                        docker stop \$CONTAINER_ID || true
-                        docker rm \$CONTAINER_ID || true
-                    fi
+                    ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ubuntu@${AWS_INSTANCE_IP} " \
+                    # Pull the latest Docker image \
+                    docker pull ${DOCKER_IMAGE_NAME} || true; \
                     
-                    # Run the new container
-                    docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}
-                    EOF
+                    # Stop any running containers using the same image \
+                    CONTAINER_ID=\$(docker ps -q --filter 'ancestor=${DOCKER_IMAGE_NAME}'); \
+                    if [ -n '\$CONTAINER_ID' ]; then \
+                        docker stop \$CONTAINER_ID; \
+                        docker rm \$CONTAINER_ID; \
+                    fi; \
+                    
+                    # Run the new container \
+                    docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}"
                     """
                 }
             }
