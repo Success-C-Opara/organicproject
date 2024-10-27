@@ -2,11 +2,10 @@ pipeline {
     agent any 
 
     environment {
-        // Define environment variables
         GIT_REPO_URL = 'https://github.com/Success-C-Opara/organicproject.git' // Your GitHub repo
         BRANCH_NAME = 'main'  // Target branch
         DOCKER_IMAGE_NAME = 'organic-django-app' // Name for your Docker image
-        AWS_INSTANCE_IP = '3.80.209.86' // Public IP of your deployment instance
+        AWS_INSTANCE_IP = '3.87.212.152' // Public IP of your deployment instance
         SSH_KEY_PATH = '/var/lib/jenkins/success-aws-key.pem' // Path to your SSH key on the AWS instance
     }
 
@@ -35,12 +34,10 @@ pipeline {
                     // Deploy the Docker container to the AWS instance
                     sh """
                     ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ubuntu@${AWS_INSTANCE_IP} << EOF
+                    # Pull the latest Docker image
+                    docker pull ${DOCKER_IMAGE_NAME} || true
                     # Stop any running containers using the same image
                     docker stop \$(docker ps -q --filter "ancestor=${DOCKER_IMAGE_NAME}") || true
-                    # Remove old containers
-                    docker rm \$(docker ps -aq --filter "ancestor=${DOCKER_IMAGE_NAME}") || true
-                    # Pull the latest Docker image
-                    docker pull ${DOCKER_IMAGE_NAME}
                     # Run the new container
                     docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}
                     EOF
