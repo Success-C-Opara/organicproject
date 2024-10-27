@@ -2,17 +2,18 @@ pipeline {
     agent any 
 
     environment {
-        GIT_REPO_URL = 'https://github.com/Success-C-Opara/organicproject.git' 
-        BRANCH_NAME = 'main'  
-        DOCKER_IMAGE_NAME = 'organic-django-app' 
-        AWS_INSTANCE_IP = '3.80.209.86' 
-        SSH_KEY_PATH = '/var/lib/jenkins/success-aws-key.pem' 
+        GIT_REPO_URL = 'https://github.com/Success-C-Opara/organicproject.git'
+        BRANCH_NAME = 'main'
+        DOCKER_IMAGE_NAME = 'organic-django-app'
+        AWS_INSTANCE_IP = '3.80.209.86'
+        SSH_KEY_PATH = '/var/lib/jenkins/success-aws-key.pem'
     }
 
     stages {
         stage('Checkout') {
             steps {
                 script {
+                    // Checkout the specified branch
                     git branch: BRANCH_NAME, url: GIT_REPO_URL
                 }
             }
@@ -21,8 +22,10 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build the Docker image from the Dockerfile
-                    docker.build(DOCKER_IMAGE_NAME)
+                    // Build the Docker image from the Dockerfile in the current directory
+                    dir('.') {  // Using the root directory of the project
+                        docker.build(DOCKER_IMAGE_NAME)
+                    }
                 }
             }
         }
@@ -30,21 +33,14 @@ pipeline {
         stage('Deploy to AWS') {
             steps {
                 script {
-                    // Deploy the Docker container to the AWS instance
                     sh """
                     ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ubuntu@${AWS_INSTANCE_IP} << EOF
-                    # Build the Docker image on the AWS instance
-                    cd /path/to/your/app  # Change to the directory where your Dockerfile is located
-                    sudo docker build -t ${DOCKER_IMAGE_NAME} .
-
+                    # Pull the latest Docker image
+                    docker pull ${DOCKER_IMAGE_NAME} || true
                     # Stop any running containers using the same image
-                    CONTAINER_ID=\$(sudo docker ps -q --filter "ancestor=${DOCKER_IMAGE_NAME}")
-                    if [ -n "\$CONTAINER_ID" ]; then
-                        sudo docker stop \$CONTAINER_ID
-                    fi
-                    
+                    docker stop \$(docker ps -q --filter "ancestor=${DOCKER_IMAGE_NAME}") || true
                     # Run the new container
-                    sudo docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}
+                    docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}
                     EOF
                     """
                 }
