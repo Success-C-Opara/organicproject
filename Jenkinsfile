@@ -23,7 +23,11 @@ pipeline {
             steps {
                 script {
                     // Build the Docker image from the Dockerfile
-                    docker.build(DOCKER_IMAGE_NAME)
+                    try {
+                        docker.build(DOCKER_IMAGE_NAME)
+                    } catch (Exception e) {
+                        error("Docker build failed: ${e.message}")
+                    }
                 }
             }
         }
@@ -32,16 +36,20 @@ pipeline {
             steps {
                 script {
                     // Deploy the Docker container to the AWS instance
-                    sh """
-                    ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ubuntu@${AWS_INSTANCE_IP} << EOF
-                    # Pull the latest Docker image
-                    docker pull ${DOCKER_IMAGE_NAME} || true
-                    # Stop any running containers using the same image
-                    docker stop \$(docker ps -q --filter "ancestor=${DOCKER_IMAGE_NAME}") || true
-                    # Run the new container
-                    docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}
-                    EOF
-                    """
+                    try {
+                        sh """
+                        ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ubuntu@${AWS_INSTANCE_IP} << EOF
+                        # Pull the latest Docker image
+                        sudo docker pull ${DOCKER_IMAGE_NAME} || true
+                        # Stop any running containers using the same image
+                        sudo docker stop \$(sudo docker ps -q --filter "ancestor=${DOCKER_IMAGE_NAME}") || true
+                        # Run the new container
+                        sudo docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}
+                        EOF
+                        """
+                    } catch (Exception e) {
+                        error("Deployment to AWS failed: ${e.message}")
+                    }
                 }
             }
         }
