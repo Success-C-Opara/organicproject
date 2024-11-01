@@ -4,8 +4,8 @@ FROM python:latest
 # Set the working directory
 WORKDIR /usr/src/app
 
-# Copy requirements.txt
-COPY requirements.txt ./
+# Copy requirements.txt first to leverage Docker cache
+COPY requirements.txt .
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
