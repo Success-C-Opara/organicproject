@@ -5,7 +5,7 @@ pipeline {
         GIT_REPO_URL = 'https://github.com/Success-C-Opara/organicproject.git'
         BRANCH_NAME = 'main'
         DOCKER_IMAGE_NAME = 'organic-django-app'
-        AWS_INSTANCE_IP = '44.203.144.149'
+        AWS_INSTANCE_IP = '54.89.211.243'
         SSH_KEY_PATH = '/var/lib/jenkins/success-aws-key.pem'
     }
 
