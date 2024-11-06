@@ -1,4 +1,4 @@
-# Use the latest official Python runtime as a parent image
+# Use the official Python runtime as a parent image
 FROM python:latest
 
 # Set the working directory inside the container
@@ -14,10 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Set the environment variable for Django settings
-ENV DJANGO_SETTINGS_MODULE=myproject.settings
+ENV DJANGO_SETTINGS_MODULE=organicproject.settings  # Ensure this is correct
 
 # Expose port 8000 for the Django application
 EXPOSE 8000
 
 # Use gunicorn as the WSGI server (recommended for production)
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "myproject.wsgi:application"]
+CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn --bind 0.0.0.0:8000 organicproject.wsgi:application"]
