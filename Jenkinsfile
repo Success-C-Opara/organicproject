@@ -1,5 +1,5 @@
 pipeline {
-    agent any 
+    agent any
 
     environment {
         GIT_REPO_URL = 'https://github.com/Success-C-Opara/organicproject.git'
@@ -64,7 +64,7 @@ pipeline {
                     # Load the Docker image from the tar file \
                     sudo docker load -i /home/ubuntu/${DOCKER_IMAGE_TAR}; \
                     
-                    # Stop any running containers using the same image \
+                    # Stop and remove any running containers using the same image \
                     CONTAINER_ID=\$(sudo docker ps -q --filter 'ancestor=${DOCKER_IMAGE_NAME}'); \
                     if [ -n '\$CONTAINER_ID' ]; then \
                         sudo docker stop \$CONTAINER_ID; \
@@ -72,7 +72,10 @@ pipeline {
                     fi; \
                     
                     # Run the new container \
-                    sudo docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}"
+                    sudo docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}; \
+                    
+                    # Clean up old Docker images and unused volumes to free up space \
+                    sudo docker system prune -f"
                     """
                 }
             }
