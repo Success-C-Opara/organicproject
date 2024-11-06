@@ -20,6 +20,33 @@ pipeline {
             }
         }
 
+        stage('Clean Up Docker') {
+            steps {
+                script {
+                    // Clean up old Docker containers and images on the EC2 instance
+                    echo 'Cleaning up old Docker containers and images on AWS instance...'
+                    sh """
+                    ssh -i ${SSH_KEY_PATH} -o StrictHostKeyChecking=no ubuntu@${AWS_INSTANCE_IP} " \
+                    # Stop and remove any running containers \
+                    CONTAINER_IDS=\$(sudo docker ps -aq); \
+                    if [ -n "\$CONTAINER_IDS" ]; then \
+                        sudo docker stop \$CONTAINER_IDS; \
+                        sudo docker rm \$CONTAINER_IDS; \
+                    fi; \
+                    
+                    # Remove any old images \
+                    IMAGE_IDS=\$(sudo docker images -q ${DOCKER_IMAGE_NAME}); \
+                    if [ -n "\$IMAGE_IDS" ]; then \
+                        sudo docker rmi \$IMAGE_IDS; \
+                    fi; \
+                    
+                    # Clean up unused Docker volumes and networks \
+                    sudo docker system prune -f"
+                    """
+                }
+            }
+        }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -73,6 +100,25 @@ pipeline {
                     
                     # Run the new container \
                     sudo docker run -d -p 80:8000 ${DOCKER_IMAGE_NAME}; \
+                    
+                    # Check if the container is running \
+                    CONTAINER_STATUS=\$(sudo docker ps -q --filter 'ancestor=${DOCKER_IMAGE_NAME}'); \
+                    if [ -z "\$CONTAINER_STATUS" ]; then \
+                        echo 'Docker container failed to start!'; \
+                        exit 1; \
+                    fi; \
+                    
+                    # Wait for the container to be fully up and running \
+                    echo 'Waiting for the application to start...'; \
+                    sleep 5; \
+                    
+                    # Check if the application is reachable on port 8000 \
+                    if curl -s http://localhost:8000 | grep 'Welcome'; then \
+                        echo 'Application is running successfully!'; \
+                    else \
+                        echo 'Application is not responding correctly!'; \
+                        exit 1; \
+                    fi; \
                     
                     # Clean up old Docker images and unused volumes to free up space \
                     sudo docker system prune -f"
