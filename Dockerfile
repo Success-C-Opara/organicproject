@@ -14,10 +14,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Set the environment variable for Django settings
-ENV DJANGO_SETTINGS_MODULE=organicproject.settings
+ENV DJANGO_SETTINGS_MODULE=myproject.settings
 
 # Expose port 8000 for the Django application
 EXPOSE 8000
 
 # Use gunicorn as the WSGI server (recommended for production)
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "organicproject.wsgi:application"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "3", "myproject.wsgi:application"]
